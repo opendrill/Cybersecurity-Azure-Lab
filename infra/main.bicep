@@ -10,7 +10,12 @@ resource rgLab 'Microsoft.Resources/resourceGroups@2025-04-01' = {
 }
 
 //IP address range for the honeynet subnet.
-var honeynetPrefix = '10.0.1.0/24'
+var honeynetPrefix = '10.0.0.0/29'
+//IP address range for the internal subnet.
+var internalPrefix = '10.0.0.8/29'
+//bastion subnet must have a /26 subnet mask.
+var bastionPrefix = '10.0.0.64/26'
+
 //defining ACL rules for the NSF for the honeynet subnet.
 var honeynetRules = [
   {
@@ -64,8 +69,6 @@ module nsgHoneynet 'modules/nsg.bicep' = {
   }  
 }
 
-//IP address range for the internal subnet.
-var internalPrefix = '10.0.2.0/24'
 //defining ACL rules for the NSG for the internal subnet.
 var internalRules = [
   {
@@ -91,6 +94,44 @@ module nsgInternal 'modules/nsg.bicep' = {
     nsgName: 'nsg-internal'
     rules: internalRules
   }  
+}
+
+//defining the subnets for the lab vnet.
+var vnetLabSubnets = [
+    {
+    name: 'honeynet'
+    properties: {
+      addressPrefix: honeynetPrefix
+      networkSecurityGroup: {
+        id: nsgHoneynet.outputs.nsgId
+      }
+    }
+  }
+  {
+    name: 'internal'
+    properties: {
+      addressPrefix: internalPrefix
+      networkSecurityGroup: {
+        id: nsgInternal.outputs.nsgId
+      }
+    }
+  }
+  {
+    name: 'AzureBastionSubnet'
+    properties: {
+      addressPrefix: bastionPrefix
+    }
+  }
+]
+//call the module to create lab vnet and subnets.
+module vnetLab 'modules/vnet.bicep' = {
+  name: 'vnet-lab'
+  scope: rgLab
+  params: {
+    vnetName: 'vnet-lab'
+    location: location
+    subnets: vnetLabSubnets
+  }
 }
 
 //we don't want to tear this down.
