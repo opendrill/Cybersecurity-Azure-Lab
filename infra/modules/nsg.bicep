@@ -1,10 +1,5 @@
-@description('Where the NSG is going')
 param location string
-
-@description('Name of the NSG')
 param nsgName string
-
-@description('Security rules to apply to the NSG')
 param rules array = []
 
 resource nsg 'Microsoft.Network/networkSecurityGroups@2026-01-01' = {

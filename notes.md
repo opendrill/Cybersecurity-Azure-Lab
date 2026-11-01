@@ -1,0 +1,1 @@
+What-if will error since one of the canary-vm params takes the value of a previously deployed subnetId which doesn't exist yet! Will work when actually created.

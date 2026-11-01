@@ -15,6 +15,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2026-01-01' = {
 }
 
 output vnetId string = vnet.id
+//making a dict of all created subnet names and ids. Call with 'moduleName'.outputs.subnetIds.'subnetName'
 output subnetIds object = toObject(
   vnet.properties.subnets,
   subnet => subnet.name,

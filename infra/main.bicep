@@ -1,8 +1,10 @@
 targetScope = 'subscription'
-
-@description('Azure region for resources')
-@allowed(['uknorth', 'ukeast', 'uksouth', 'ukwest']) //allowed arguments.
-param location string = 'uksouth' //defaults to uksouth if no argument provided.
+@allowed(['ukwest']) //allowed arguments.
+param location string = 'ukwest' //defaults to uksouth if no argument provided. doing west for now since south vmSize is restricted for my subscription.
+@description('SSH public key file path for VM admin access')
+param sshPubKey string
+@description('username of the admin, ssh key must be in this /home/username/.ssh/ directory')
+param adminUserName string
 
 resource rgLab 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   name: 'rg-lab'
@@ -16,25 +18,15 @@ var internalPrefix = '10.0.0.8/29'
 //bastion subnet must have a /26 subnet mask.
 var bastionPrefix = '10.0.0.64/26'
 
+//size of the vm
+var vmSize string = 'Standard_D2alds_v7' //cheapest size I could see.
+
 //defining ACL rules for the NSF for the honeynet subnet.
 var honeynetRules = [
   {
-    name: 'deny-outbound-traffic'
-    properties: {
-      priority: 100 //must be a value between 100 and 4096.
-      direction: 'Outbound'
-      access: 'Deny'
-      protocol: '*'
-      sourceAddressPrefix: honeynetPrefix
-      sourcePortRange: '*'
-      destinationAddressPrefix: '*'
-      destinationPortRange: '*'
-    }
-  }
-  {
     name: 'allow-in-ssh'
     properties: {
-      priority: 200
+      priority: 100
       direction: 'Inbound'
       access: 'Allow'
       protocol: 'Tcp'
@@ -44,10 +36,10 @@ var honeynetRules = [
       destinationPortRange:'22'
     }
   }
-    {
+  {
     name: 'allow-in-http'
     properties: {
-      priority: 300
+      priority: 200
       direction: 'Inbound'
       access: 'Allow'
       protocol: 'Tcp'
@@ -55,6 +47,19 @@ var honeynetRules = [
       sourcePortRange: '*'
       destinationAddressPrefix: honeynetPrefix
       destinationPortRange:'80'
+    }
+  }
+    {
+    name: 'deny-outbound-traffic'
+    properties: {
+      priority: 300 //must be a value between 100 and 4096.
+      direction: 'Outbound'
+      access: 'Deny'
+      protocol: '*'
+      sourceAddressPrefix: honeynetPrefix
+      sourcePortRange: '*'
+      destinationAddressPrefix: '*'
+      destinationPortRange: '*'
     }
   }
 ]
@@ -72,15 +77,28 @@ module nsgHoneynet 'modules/nsg.bicep' = {
 //defining ACL rules for the NSG for the internal subnet.
 var internalRules = [
   {
-    name: 'deny-in-honeynet-traffic'
+    name: 'deny-in-honeynet'
     properties: {
       priority: 100
       direction: 'Inbound'
       access: 'Deny'
       protocol: '*'
-      sourceAddressPrefix: '*'
+      sourceAddressPrefix: honeynetPrefix
       sourcePortRange: '*'
       destinationAddressPrefix: internalPrefix
+      destinationPortRange: '*'
+    }
+  }
+  {
+    name: 'deny-out-honeynet'
+    properties: {
+      priority: 200
+      direction: 'Outbound'
+      access: 'Deny'
+      protocol: '*'
+      sourceAddressPrefix: internalPrefix
+      sourcePortRange: '*'
+      destinationAddressPrefix: honeynetPrefix
       destinationPortRange: '*'
     }
   }
@@ -131,6 +149,20 @@ module vnetLab 'modules/vnet.bicep' = {
     vnetName: 'vnet-lab'
     location: location
     subnets: vnetLabSubnets
+  }
+}
+
+//call the module to create a canary vm for the internal subnet.
+module vmCanary 'modules/vm.bicep' = {
+  name: 'vm-canary'
+  scope:rgLab
+  params: {
+    vmName: 'vm-canary'
+    location: location
+    subnetId: vnetLab.outputs.subnetIds.internal
+    vmSize: vmSize
+    adminUserName: adminUserName
+    sshPubKey: sshPubKey
   }
 }
 
