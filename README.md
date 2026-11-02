@@ -10,11 +10,22 @@ Due to extremely tight cost restraints (I am working solely off the free £150 c
 
 ## Overall architecture:
 ### Resource group for the lab: 
-This resource group will contain; a vnet with 3 subnets, 1 subnet for the honeynet, 1 subnet for a private internal network that shouldn't get compromised, and 1 for Azure Bastion. There will also be 2 NSGs within this resource group, 1 for the honeynet subnet and 1 for the internal subnet. The internal subnet will have 1 vm within it, the honeynet subnet will have the two honeypots mentioned previously. Traffic will be blocked from leaving the honeynet and traffic from the internal subnet will be blocked from going to the honeynet.
+This resource group will contain;
+- Vnet with 3 subnets, 1 subnet for the honeynet, 1 subnet for a private internal network that shouldn't get compromised, and 1 for Azure Bastion.
+- 2 NSGs, 1 for the honeynet subnet and 1 for the internal subnet.
+- Outgoing traffic from the honeynet to the internal subnet will be blocked.
+- Outgoing traffic from the internal subnet to the honeynet will be blocked.
+- The honeynet subnet will have the two honeypots mentioned previously; 1 vulnerable web server, one server with port 22 exposed to the internet.
+- The internal subnet will have 1 "canary" vm within it, this should not get attacked/compromised, if it does then I know I've done something wrong.
 
 ### Resource group for monitoring the lab:
-This resource group will contain; log analytics, Sentinel, and playbooks for blocking attacker IP addresses. Not really sure on the details of this yet, I am working everything out as I go along.
+This resource group will contain;
+- log analytics.
+- Sentinel.
+- Playbooks for blocking attacker IP addresses.
+
+Not really sure on the details of this yet, I am working everything out as I go along.
 
 Please see the Architecture diagram in this repository for a more clear overview.
 
-[!Architecture diagram](ArchitectureDiagram.drawio.png)
+![Architecture diagram](ArchitectureDiagram.drawio.png)
