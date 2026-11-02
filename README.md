@@ -9,7 +9,7 @@ My aim is to make a honeynet containing a couple of flavours of honeypots, one h
 Due to extremely tight cost restraints (I am working solely off the free £150 credit that Azure gives new users for 1 month) I will be using bicep to deploy/create the resources for this project, this is so I can tear everything down and only have resources deployed and running for short time periods when I want to actually collect and analyse logs, test the playbooks, etc.
 
 ## Overall architecture
-### Resource group for the lab: 
+### Resource group for the lab
 This resource group will contain;
 - Vnet with 3 subnets, 1 subnet for the honeynet, 1 subnet for a private internal network that shouldn't get compromised, and 1 for Azure Bastion.
 - 2 NSGs, 1 for the honeynet subnet and 1 for the internal subnet.
