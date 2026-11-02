@@ -12,11 +12,12 @@ Due to extremely tight cost restraints (I am working solely off the free £150 c
 ### Resource group for the lab
 This resource group will contain;
 - Vnet with 3 subnets, 1 subnet for the honeynet, 1 subnet for a private internal network that shouldn't get compromised, and 1 for Azure Bastion.
-- 2 NSGs, 1 for the honeynet subnet and 1 for the internal subnet.
+- 3 NSGs, 1 for the honeynet subnet, 1 for the internal subnet, and 1 for AzureBastionSubnet.
 - Outgoing traffic from the honeynet to the internal subnet will be blocked.
 - Outgoing traffic from the internal subnet to the honeynet will be blocked.
 - The honeynet subnet will have the two honeypots mentioned previously; 1 vulnerable web server, one server with port 22 exposed to the internet.
 - The internal subnet will have 1 "canary" vm within it, this should not get attacked/compromised, if it does then I know I've done something wrong.
+- Bastion for remotely accessing the vms.
 
 ### Resource group for monitoring the lab
 This resource group will contain;
