@@ -9,18 +9,11 @@ param sshPubKey string
 @description('username of the admin, ssh key must be in this /home/username/.ssh/ directory')
 param adminUserName string
 
-
-
-
-
+//creating the resource group.
 resource rgLab 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   name: 'rg-lab'
   location: location
 }
-
-
-
-
 
 //IP address range for the honeynet subnet.
 var honeynetPrefix = '10.0.0.0/29'
@@ -31,10 +24,6 @@ var bastionPrefix = '10.0.0.64/26'
 
 //size of the vm
 var vmSize string = 'Standard_D2alds_v7' //cheapest size I could see.
-
-
-
-
 
 //defining ACL rules for the NSF for the honeynet subnet.
 var honeynetRules = [
@@ -89,14 +78,10 @@ module nsgHoneynet 'modules/nsg.bicep' = {
   }  
 }
 
-
-
-
-
 //defining ACL rules for the NSG for the internal subnet.
 var internalRules = [
     {
-    name: 'allow-in-ssh'
+    name: 'allow-in-ssh-bastion'
     properties: {
       priority: 100
       direction: 'Inbound'
@@ -146,17 +131,13 @@ module nsgInternal 'modules/nsg.bicep' = {
   }  
 }
 
-
-
-
-
 //defining ACL rules for the NSG for the AzureBastionSubnet.
 //NSG rules need more work.
 var AzureBastionSubnetRules = [
   {
     name: 'AllowHttpsInbound' //copied from https://learn.microsoft.com/en-us/azure/bastion/bastion-nsg?tabs=portal
     properties: {
-      priority: '100'
+      priority: 100
       direction: 'Inbound'
       access: 'Allow'
       protocol: 'Tcp'
@@ -169,7 +150,7 @@ var AzureBastionSubnetRules = [
     {
     name: 'AllowGatewayManagerInbound' //copied from https://learn.microsoft.com/en-us/azure/bastion/bastion-nsg?tabs=portal
     properties: {
-      priority: '200'
+      priority: 200
       direction: 'Inbound'
       access: 'Allow'
       protocol: 'Tcp'
@@ -182,7 +163,7 @@ var AzureBastionSubnetRules = [
     {
     name: 'AllowBastionHostCommunication' //copied from https://learn.microsoft.com/en-us/azure/bastion/bastion-nsg?tabs=portal
     properties: {
-      priority: '300'
+      priority: 300
       direction: 'Inbound'
       access: 'Allow'
       protocol: '*'
@@ -195,7 +176,7 @@ var AzureBastionSubnetRules = [
   {
     name: 'AllowAzureLoadBalancerInbound' //copied from https://learn.microsoft.com/en-us/azure/bastion/bastion-nsg?tabs=portal
     properties: {
-      priority: '400'
+      priority: 400
       direction: 'Inbound'
       access: 'Allow'
       protocol: 'Tcp'
@@ -208,7 +189,7 @@ var AzureBastionSubnetRules = [
   {
     name: 'AllowSshRdpOutbound' //copied from https://learn.microsoft.com/en-us/azure/bastion/bastion-nsg?tabs=portal
     properties: {
-      priority: '500'
+      priority: 500
       direction: 'Outbound'
       access: 'Allow'
       protocol: '*'
@@ -221,20 +202,20 @@ var AzureBastionSubnetRules = [
   {
     name: 'AllowAzureCloudOutbound' //copied from https://learn.microsoft.com/en-us/azure/bastion/bastion-nsg?tabs=portal
     properties: {
-      priority: '600'
+      priority: 600
       direction: 'Outbound'
       access: 'Allow'
       protocol: 'Tcp'
       sourceAddressPrefix: '*'
       sourcePortRange: '*'
-      destinationAddressPrefix: 'VirtualNetwork'
+      destinationAddressPrefix: 'AzureCloud'
       destinationPortRange: '443'
     }
   }
   {
     name: 'AllowBastionCommunication' //copied from https://learn.microsoft.com/en-us/azure/bastion/bastion-nsg?tabs=portal
     properties: {
-      priority: '700'
+      priority: 700
       direction: 'Outbound'
       access: 'Allow'
       protocol: '*'
@@ -247,7 +228,7 @@ var AzureBastionSubnetRules = [
    {
     name: 'AllowHttpOutbound' //copied from https://learn.microsoft.com/en-us/azure/bastion/bastion-nsg?tabs=portal
     properties: {
-      priority: '800'
+      priority: 800
       direction: 'Outbound'
       access: 'Allow'
       protocol: '*'
@@ -268,10 +249,6 @@ module nsgAzureBastionSubnet 'modules/nsg.bicep' = {
     rules: AzureBastionSubnetRules
   }
 }
-
-
-
-
 
 //defining the subnets for the lab vnet.
 var vnetLabSubnets = [
@@ -297,6 +274,9 @@ var vnetLabSubnets = [
     name: 'AzureBastionSubnet'
     properties: {
       addressPrefix: bastionPrefix
+      networkSecurityGroup: {
+        id: nsgAzureBastionSubnet.outputs.nsgId
+      }
     }
   }
 ]
@@ -310,10 +290,6 @@ module vnetLab 'modules/vnet.bicep' = {
     subnets: vnetLabSubnets
   }
 }
-
-
-
-
 
 //call the module to create a canary vm on the internal subnet.
 module vmCanary 'modules/vm.bicep' = {
@@ -329,11 +305,6 @@ module vmCanary 'modules/vm.bicep' = {
   }
 }
 
-
-
-
-
-
 //call the module to create a bastion in the bastion subnet.
 module bastion 'modules/bastion.bicep' = {
   name: 'bastion'
@@ -344,11 +315,6 @@ module bastion 'modules/bastion.bicep' = {
     azureBastionSubnetId: vnetLab.outputs.subnetIds.AzureBastionSubnet
   }
 }
-
-
-
-
-
 
 //we don't want to tear this down.
 resource rgMonitoring 'Microsoft.Resources/resourceGroups@2025-04-01' = {

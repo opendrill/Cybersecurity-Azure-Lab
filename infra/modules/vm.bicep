@@ -19,7 +19,7 @@ resource nic 'Microsoft.Network/networkInterfaces@2026-01-01' = {
           }
           privateIPAllocationMethod: 'Dynamic'
         }
-      }
+      } 
     ]
   }
 }
