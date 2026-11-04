@@ -34,26 +34,13 @@ var honeynetRules = [
       direction: 'Inbound'
       access: 'Allow'
       protocol: 'Tcp'
-      sourceAddressPrefix: '*'
+      sourceAddressPrefix: 'Internet'
       sourcePortRange: '*'
       destinationAddressPrefix: honeynetPrefix
       destinationPortRange:'22'
     }
   }
   {
-    name: 'allow-in-http'
-    properties: {
-      priority: 200
-      direction: 'Inbound'
-      access: 'Allow'
-      protocol: 'Tcp'
-      sourceAddressPrefix: '*'
-      sourcePortRange: '*'
-      destinationAddressPrefix: honeynetPrefix
-      destinationPortRange:'80'
-    }
-  }
-    {
     name: 'deny-outbound-traffic'
     properties: {
       priority: 300 //must be a value between 100 and 4096.
@@ -306,11 +293,11 @@ module vmCanary 'modules/vm.bicep' = {
   }
 }
 
-module honeypot 'modules/vm.bicep' = {
-  name: 'honeypot'
+module sshHoneypot 'modules/vm.bicep' = {
+  name: 'vm-ssh'
   scope: rgLab
   params: {
-    vmName: 'vm-honeypot'
+    vmName: 'vm-ssh'
     location: location
     subnetId: vnetLab.outputs.subnetIds.honeynet
     vmSize: vmSize
@@ -319,6 +306,8 @@ module honeypot 'modules/vm.bicep' = {
     pubIp: true
   }
 }
+
+//leaving out the http honeypot for now.
 
 //call the module to create a bastion in the bastion subnet.
 module bastion 'modules/bastion.bicep' = {

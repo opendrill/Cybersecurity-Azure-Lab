@@ -6,3 +6,5 @@ sshPubKey="$(cat ~/.ssh/azure_lab.pub)"
 Full command example for deploying:
 az deployment sub create --location uksouth --template-file infra/
 main.bicep --parameters sshPubKey="$(cat ~/.ssh/azure_lab.pub)" adminUserName=
+
+Going to have to scale back this project and remove the web server honeypot, cowrie set up is a bit more complex then i thought it would be and i'm worried about time before my free credit expires.
