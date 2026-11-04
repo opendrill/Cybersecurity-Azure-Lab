@@ -22,7 +22,7 @@ var internalPrefix = '10.0.0.8/29'
 //bastion subnet must have a /26 subnet mask.
 var bastionPrefix = '10.0.0.64/26'
 
-//size of the vm
+//size of the vms
 var vmSize string = 'Standard_D2alds_v7' //cheapest size I could see.
 
 //defining ACL rules for the NSF for the honeynet subnet.
@@ -302,6 +302,21 @@ module vmCanary 'modules/vm.bicep' = {
     vmSize: vmSize
     adminUserName: adminUserName
     sshPubKey: sshPubKey
+    pubIp: false
+  }
+}
+
+module honeypot 'modules/vm.bicep' = {
+  name: 'honeypot'
+  scope: rgLab
+  params: {
+    vmName: 'vm-honeypot'
+    location: location
+    subnetId: vnetLab.outputs.subnetIds.honeynet
+    vmSize: vmSize
+    adminUserName: adminUserName
+    sshPubKey: sshPubKey
+    pubIp: true
   }
 }
 

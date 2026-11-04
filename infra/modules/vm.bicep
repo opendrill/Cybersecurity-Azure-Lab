@@ -4,6 +4,20 @@ param subnetId string
 param vmSize string
 param adminUserName string
 param sshPubKey string
+param pubIp bool
+
+//Optional public IP address.
+resource publicIpAddress 'Microsoft.Network/publicIPAddresses@2026-01-01' = if (pubIp) {
+  name: '${vmName}-public-ip'
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAddressVersion: 'IPv4'
+    publicIPAllocationMethod: 'Static'
+  }
+}
 
 //create a nic for the vm
 resource nic 'Microsoft.Network/networkInterfaces@2026-01-01' = {
@@ -18,6 +32,7 @@ resource nic 'Microsoft.Network/networkInterfaces@2026-01-01' = {
             id: subnetId
           }
           privateIPAllocationMethod: 'Dynamic'
+          publicIPAddress: pubIp ? {id: publicIpAddress!.id} : null //if pubIp = true give it the id, else give it null.
         }
       } 
     ]
@@ -72,4 +87,5 @@ resource vm 'Microsoft.Compute/virtualMachines@2026-04-01' = {
 }
 
 output vmId string = vm.id
-output privateIp string = nic.properties.ipConfigurations[0].properties.privateIPAddress
+output privateIpAddress string = nic.properties.ipConfigurations[0].properties.privateIPAddress
+output publicIpAddress string = pubIp ? publicIpAddress!.properties.ipAddress : '' //if pubIp true output the ip address of the resource, else output blank string.
