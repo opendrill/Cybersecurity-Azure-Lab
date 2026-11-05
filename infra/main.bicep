@@ -41,15 +41,28 @@ var honeynetRules = [
     }
   }
   {
-    name: 'deny-outbound-traffic'
+    name: 'allow-out-internet'
     properties: {
-      priority: 300 //must be a value between 100 and 4096.
+      priority: 200
+      direction: 'Outbound'
+      access: 'Allow'
+      protocol: '*'
+      sourceAddressPrefix: honeynetPrefix
+      sourcePortRange: '*'
+      destinationAddressPrefix: 'Internet'
+      destinationPortRange: '*'
+    }
+  }
+  {
+    name: 'deny-outbound-traffic-internal'
+    properties: {
+      priority: 300
       direction: 'Outbound'
       access: 'Deny'
       protocol: '*'
       sourceAddressPrefix: honeynetPrefix
       sourcePortRange: '*'
-      destinationAddressPrefix: '*'
+      destinationAddressPrefix: internalPrefix
       destinationPortRange: '*'
     }
   }
@@ -242,6 +255,7 @@ var vnetLabSubnets = [
     {
     name: 'honeynet'
     properties: {
+      defaultOutboundAccess: true
       addressPrefix: honeynetPrefix
       networkSecurityGroup: {
         id: nsgHoneynet.outputs.nsgId
@@ -251,6 +265,7 @@ var vnetLabSubnets = [
   {
     name: 'internal'
     properties: {
+      defaultOutboundAccess: false
       addressPrefix: internalPrefix
       networkSecurityGroup: {
         id: nsgInternal.outputs.nsgId
@@ -279,6 +294,7 @@ module vnetLab 'modules/vnet.bicep' = {
 }
 
 //call the module to create a canary vm on the internal subnet.
+/*
 module vmCanary 'modules/vm.bicep' = {
   name: 'vm-canary'
   scope: rgLab
@@ -292,6 +308,7 @@ module vmCanary 'modules/vm.bicep' = {
     pubIp: false
   }
 }
+*/
 
 module sshHoneypot 'modules/vm.bicep' = {
   name: 'vm-ssh'
@@ -303,11 +320,9 @@ module sshHoneypot 'modules/vm.bicep' = {
     vmSize: vmSize
     adminUserName: adminUserName
     sshPubKey: sshPubKey
-    pubIp: true
+    pubIp: false //change to true later
   }
 }
-
-//leaving out the http honeypot for now.
 
 //call the module to create a bastion in the bastion subnet.
 module bastion 'modules/bastion.bicep' = {
