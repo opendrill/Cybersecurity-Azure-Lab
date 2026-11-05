@@ -94,9 +94,22 @@ var internalRules = [
     }
   }
   {
-    name: 'deny-in-honeynet'
+    name: 'allow-out-internet'
     properties: {
       priority: 200
+      direction: 'Outbound'
+      access: 'Allow'
+      protocol: '*'
+      sourceAddressPrefix: honeynetPrefix
+      sourcePortRange: '*'
+      destinationAddressPrefix: 'Internet'
+      destinationPortRange: '*'
+    }
+  }
+  {
+    name: 'deny-in-honeynet'
+    properties: {
+      priority: 300
       direction: 'Inbound'
       access: 'Deny'
       protocol: '*'
@@ -109,7 +122,7 @@ var internalRules = [
   {
     name: 'deny-out-honeynet'
     properties: {
-      priority: 300
+      priority: 400
       direction: 'Outbound'
       access: 'Deny'
       protocol: '*'
