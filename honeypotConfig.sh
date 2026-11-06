@@ -34,6 +34,15 @@ python3 -m pip install cowrie
 cowrie init
 cowrie start
 
+mkdir honeypot
+cd honeypot
+python3 -m venv cowrie-env
+source cowrie-env/bin/activate
+pip install cowrie
+cowrie init
+# Edit etc/cowrie.cfg as needed
+cowrie start
+
 #Automatically start cowrie with systemd in case the vm restarts.
 systemctl daemon-reload
 systemctl start cowrie.service

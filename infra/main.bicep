@@ -15,18 +15,18 @@ resource rgLab 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   location: location
 }
 
-//IP address range for the honeynet subnet.
-var honeynetPrefix = '10.0.0.0/29'
-//IP address range for the internal subnet.
-var internalPrefix = '10.0.0.8/29'
+//IP address range for the public subnet.
+var publicPrefix = '10.0.0.0/29'
+//IP address range for the private subnet.
+var privatePrefix = '10.0.0.8/29'
 //bastion subnet must have a /26 subnet mask.
 var bastionPrefix = '10.0.0.64/26'
 
 //size of the vms
 var vmSize string = 'Standard_D2alds_v7' //cheapest size I could see.
 
-//defining ACL rules for the NSF for the honeynet subnet.
-var honeynetRules = [
+//defining ACL rules for the NSF for the public subnet.
+var publicRules = [
   {
     name: 'allow-in-ssh'
     properties: {
@@ -36,7 +36,7 @@ var honeynetRules = [
       protocol: 'Tcp'
       sourceAddressPrefix: 'Internet'
       sourcePortRange: '*'
-      destinationAddressPrefix: honeynetPrefix
+      destinationAddressPrefix: publicPrefix
       destinationPortRange:'22'
     }
   }
@@ -47,39 +47,39 @@ var honeynetRules = [
       direction: 'Outbound'
       access: 'Allow'
       protocol: '*'
-      sourceAddressPrefix: honeynetPrefix
+      sourceAddressPrefix: publicPrefix
       sourcePortRange: '*'
       destinationAddressPrefix: 'Internet'
       destinationPortRange: '*'
     }
   }
   {
-    name: 'deny-outbound-traffic-internal'
+    name: 'deny-outbound-traffic-private'
     properties: {
       priority: 300
       direction: 'Outbound'
       access: 'Deny'
       protocol: '*'
-      sourceAddressPrefix: honeynetPrefix
+      sourceAddressPrefix: publicPrefix
       sourcePortRange: '*'
-      destinationAddressPrefix: internalPrefix
+      destinationAddressPrefix: privatePrefix
       destinationPortRange: '*'
     }
   }
 ]
-//calling the module to create the honeynet NSG and providing relative parameters.
-module nsgHoneynet 'modules/nsg.bicep' = {
-  name: 'nsg-honeynet'
+//calling the module to create the public NSG and providing relative parameters.
+module nsgPublic 'modules/nsg.bicep' = {
+  name: 'nsg-public'
   scope: rgLab
   params: {
     location: location
-    nsgName: 'nsg-honeynet'
-    rules: honeynetRules
+    nsgName: 'nsg-public'
+    rules: publicRules
   }  
 }
 
-//defining ACL rules for the NSG for the internal subnet.
-var internalRules = [
+//defining ACL rules for the NSG for the private subnet.
+var privateRules = [
     {
     name: 'allow-in-ssh-bastion'
     properties: {
@@ -89,7 +89,7 @@ var internalRules = [
       protocol: 'Tcp'
       sourceAddressPrefix: bastionPrefix
       sourcePortRange: '*'
-      destinationAddressPrefix: internalPrefix
+      destinationAddressPrefix: privatePrefix
       destinationPortRange:'22'
     }
   }
@@ -100,27 +100,27 @@ var internalRules = [
       direction: 'Outbound'
       access: 'Allow'
       protocol: '*'
-      sourceAddressPrefix: honeynetPrefix
+      sourceAddressPrefix: publicPrefix
       sourcePortRange: '*'
       destinationAddressPrefix: 'Internet'
       destinationPortRange: '*'
     }
   }
   {
-    name: 'deny-in-honeynet'
+    name: 'deny-in-public'
     properties: {
       priority: 300
       direction: 'Inbound'
       access: 'Deny'
       protocol: '*'
-      sourceAddressPrefix: honeynetPrefix
+      sourceAddressPrefix: publicPrefix
       sourcePortRange: '*'
       destinationAddressPrefix: '*'
       destinationPortRange: '*'
     }
   }
   {
-    name: 'deny-out-honeynet'
+    name: 'deny-out-public'
     properties: {
       priority: 400
       direction: 'Outbound'
@@ -128,19 +128,19 @@ var internalRules = [
       protocol: '*'
       sourceAddressPrefix: '*'
       sourcePortRange: '*'
-      destinationAddressPrefix: honeynetPrefix
+      destinationAddressPrefix: publicPrefix
       destinationPortRange: '*'
     }
   }
 ]
-//calling the module to create the internal NSG and providing relative parameters.
-module nsgInternal 'modules/nsg.bicep' = {
-  name: 'nsg-internal'
+//calling the module to create the private NSG and providing relative parameters.
+module nsgPrivate 'modules/nsg.bicep' = {
+  name: 'nsg-private'
   scope: rgLab
   params: {
     location: location
-    nsgName: 'nsg-internal'
-    rules: internalRules
+    nsgName: 'nsg-private'
+    rules: privateRules
   }  
 }
 
@@ -266,22 +266,22 @@ module nsgAzureBastionSubnet 'modules/nsg.bicep' = {
 //defining the subnets for the lab vnet.
 var vnetLabSubnets = [
     {
-    name: 'honeynet'
+    name: 'public'
     properties: {
       defaultOutboundAccess: true
-      addressPrefix: honeynetPrefix
+      addressPrefix: publicPrefix
       networkSecurityGroup: {
-        id: nsgHoneynet.outputs.nsgId
+        id: nsgPublic.outputs.nsgId
       }
     }
   }
   {
-    name: 'internal'
+    name: 'private'
     properties: {
       defaultOutboundAccess: false
-      addressPrefix: internalPrefix
+      addressPrefix: privatePrefix
       networkSecurityGroup: {
-        id: nsgInternal.outputs.nsgId
+        id: nsgPrivate.outputs.nsgId
       }
     }
   }
@@ -306,30 +306,28 @@ module vnetLab 'modules/vnet.bicep' = {
   }
 }
 
-//call the module to create a canary vm on the internal subnet.
-/*
-module vmCanary 'modules/vm.bicep' = {
-  name: 'vm-canary'
+//call the module to create a vm on the private subnet.
+module vmPrivate 'modules/vm.bicep' = {
+  name: 'vm-private'
   scope: rgLab
   params: {
-    vmName: 'vm-canary'
+    vmName: 'vm-private'
     location: location
-    subnetId: vnetLab.outputs.subnetIds.internal
+    subnetId: vnetLab.outputs.subnetIds.private
     vmSize: vmSize
     adminUserName: adminUserName
     sshPubKey: sshPubKey
     pubIp: false
   }
 }
-*/
 
 module sshHoneypot 'modules/vm.bicep' = {
-  name: 'vm-ssh'
+  name: 'vm-public-ssh'
   scope: rgLab
   params: {
-    vmName: 'vm-ssh'
+    vmName: 'vm-public-ssh'
     location: location
-    subnetId: vnetLab.outputs.subnetIds.honeynet
+    subnetId: vnetLab.outputs.subnetIds.public
     vmSize: vmSize
     adminUserName: adminUserName
     sshPubKey: sshPubKey
@@ -352,4 +350,13 @@ module bastion 'modules/bastion.bicep' = {
 resource rgMonitoring 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   name: 'rg-monitoring'
   location: location
+}
+
+module logAnalytics 'modules/workspace.bicep' = {
+  name: 'log-analytics-workspace'
+  scope: rgMonitoring
+  params: {
+    workspaceName: 'log-analytics-workspace'
+    location: location
+  }
 }

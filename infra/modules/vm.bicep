@@ -65,7 +65,7 @@ resource vm 'Microsoft.Compute/virtualMachines@2026-04-01' = {
     storageProfile: {
       imageReference: {
         publisher: 'Canonical'
-        offer: 'ubuntu-26_04-lts'
+        offer: 'ubuntu-24_04-lts'
         sku: 'server'
         version: 'latest'
       }

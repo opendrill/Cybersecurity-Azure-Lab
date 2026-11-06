@@ -23,6 +23,7 @@ resource bastion 'Microsoft.Network/bastionHosts@2026-01-01' = {
     name: 'Standard'
   }
   properties: {
+    disableCopyPaste: false
     ipConfigurations: [
       {
         name: 'ipconfig'
