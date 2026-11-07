@@ -352,11 +352,21 @@ resource rgMonitoring 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   location: location
 }
 
+//deploying log analytics workspace.
 module logAnalytics 'modules/workspace.bicep' = {
   name: 'log-analytics-workspace'
   scope: rgMonitoring
   params: {
     workspaceName: 'log-analytics-workspace'
     location: location
+  }
+}
+
+//deploying sentinel to the log analytics workspace.
+module sentinel 'modules/sentinel.bicep' = {
+  name: 'sentinel'
+  scope: rgMonitoring
+  params: {
+    workspaceName: logAnalytics.name
   }
 }

@@ -20,3 +20,6 @@ resource workspace 'Microsoft.OperationalInsights/workspaces@2026-03-01' = {
     }
   }
 }
+
+output workspaceName string = workspace.name
+output workspaceId string = workspace.id
