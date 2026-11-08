@@ -306,35 +306,6 @@ module vnetLab 'modules/vnet.bicep' = {
   }
 }
 
-//call the module to create a vm on the private subnet.
-module vmPrivate 'modules/vm.bicep' = {
-  name: 'vm-private'
-  scope: rgLab
-  params: {
-    vmName: 'vm-private'
-    location: location
-    subnetId: vnetLab.outputs.subnetIds.private
-    vmSize: vmSize
-    adminUserName: adminUserName
-    sshPubKey: sshPubKey
-    pubIp: false
-  }
-}
-
-module sshHoneypot 'modules/vm.bicep' = {
-  name: 'vm-public-ssh'
-  scope: rgLab
-  params: {
-    vmName: 'vm-public-ssh'
-    location: location
-    subnetId: vnetLab.outputs.subnetIds.public
-    vmSize: vmSize
-    adminUserName: adminUserName
-    sshPubKey: sshPubKey
-    pubIp: false //change to true later
-  }
-}
-
 //call the module to create a bastion in the bastion subnet.
 module bastion 'modules/bastion.bicep' = {
   name: 'bastion'
@@ -362,11 +333,56 @@ module logAnalytics 'modules/workspace.bicep' = {
   }
 }
 
+//creating dcr rule for getting all syslog messages into log analytics.
+module syslogDcr 'modules/dcr.bicep' = {
+  name: 'syslog-dcr'
+  scope: rgMonitoring
+  params: {
+    location: location
+    ruleName: 'syslog-dcr'
+    workspaceId: logAnalytics.outputs.workspaceId
+    workspaceName: logAnalytics.outputs.workspaceName
+  }
+}
+
 //deploying sentinel to the log analytics workspace.
 module sentinel 'modules/sentinel.bicep' = {
   name: 'sentinel'
   scope: rgMonitoring
   params: {
     workspaceName: logAnalytics.name
+  }
+}
+
+//call the module to create a vm on the private subnet.
+module vmPrivate 'modules/vm.bicep' = {
+  name: 'vm-private'
+  scope: rgLab
+  params: {
+    vmName: 'vm-private'
+    location: location
+    subnetId: vnetLab.outputs.subnetIds.private
+    vmSize: vmSize
+    adminUserName: adminUserName
+    sshPubKey: sshPubKey
+    dcrId: syslogDcr.outputs.ruleId
+    installMonitoringAgent: true
+    pubIp: false
+  }
+}
+
+module vmPublic 'modules/vm.bicep' = {
+  name: 'vm-public'
+  scope: rgLab
+  params: {
+    vmName: 'vm-public'
+    location: location
+    subnetId: vnetLab.outputs.subnetIds.public
+    vmSize: vmSize
+    adminUserName: adminUserName
+    sshPubKey: sshPubKey
+    dcrId: syslogDcr.outputs.ruleId
+    installMonitoringAgent: true
+    pubIp: false //change to true later
   }
 }

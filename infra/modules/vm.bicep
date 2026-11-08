@@ -5,6 +5,8 @@ param vmSize string
 param adminUserName string
 param sshPubKey string
 param pubIp bool
+param installMonitoringAgent bool
+param dcrId string
 
 //Optional public IP address.
 resource publicIpAddress 'Microsoft.Network/publicIPAddresses@2026-01-01' = if (pubIp) {
@@ -83,6 +85,29 @@ resource vm 'Microsoft.Compute/virtualMachines@2026-04-01' = {
         }
       ]
     }
+  }
+}
+
+//assosciating the syslog collection dcr rule.
+resource dcrAssosciation 'Microsoft.Insights/dataCollectionRuleAssociations@2024-03-11' = if (installMonitoringAgent) {
+  name: '${vmName}-syslog-dcr'
+  scope: vm
+  properties: {
+    dataCollectionRuleId: dcrId
+  }
+}
+
+//installing defender agent.
+resource linuxAgent 'Microsoft.Compute/virtualMachines/extensions@2026-04-01' = if (installMonitoringAgent) {
+  parent: vm
+  name: '${vmName}-AzureMonitorLinuxAgent'
+  location: location
+  properties: {
+    publisher: 'Microsoft.Azure.Monitor'
+    type: 'AzureMonitorLinuxAgent'
+    typeHandlerVersion: '1.21'
+    autoUpgradeMinorVersion: true
+    enableAutomaticUpgrade: true
   }
 }
 
