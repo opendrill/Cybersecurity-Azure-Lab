@@ -45,6 +45,7 @@ resource nic 'Microsoft.Network/networkInterfaces@2026-01-01' = {
 resource vm 'Microsoft.Compute/virtualMachines@2026-04-01' = {
   name: vmName
   location: location
+  identity: installMonitoringAgent ? { type: 'SystemAssigned' } : null
   properties: {
     hardwareProfile: {
       vmSize: vmSize

@@ -7,7 +7,7 @@ resource workspace 'Microsoft.OperationalInsights/workspaces@2026-03-01' = {
   properties: {
     publicNetworkAccessForIngestion: 'Enabled'
     publicNetworkAccessForQuery: 'Enabled'
-    //retentionInDays: 3 //not usable with pay as you go sku.
+    retentionInDays: 7 //will run the vulnerable public server for a week
     sku: {
       name: 'PerGB2018'
     }
