@@ -3,6 +3,7 @@ param ruleName string
 param workspaceId string
 param workspaceName string
 
+//Syslog collection
 resource dcr 'Microsoft.Insights/dataCollectionRules@2024-03-11' = {
   name: ruleName
   location: location

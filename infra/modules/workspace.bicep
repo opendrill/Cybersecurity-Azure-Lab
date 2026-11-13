@@ -21,5 +21,14 @@ resource workspace 'Microsoft.OperationalInsights/workspaces@2026-03-01' = {
   }
 }
 
+//no tables by default, will have to make them here.
+resource syslogTable 'Microsoft.OperationalInsights/workspaces/tables@2026-03-01' = {
+  parent: workspace
+  name: 'Syslog'
+  properties: {
+    plan: 'Analytics'
+  }
+}
+
 output workspaceName string = workspace.name
 output workspaceId string = workspace.id
