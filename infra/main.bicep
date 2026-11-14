@@ -386,3 +386,14 @@ module vmPublic 'modules/vm.bicep' = {
     pubIp: false //change to true later
   }
 }
+
+module allowedLocationsPolicy 'modules/policy.bicep' = {
+  name: 'allowed-locations'
+  scope: subscription()
+  params: {
+    policyName: 'allowed-locations'
+    location: location
+    policyDescription: ''
+    policyDefId: '/providers/microsoft.authorization/policydefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c'
+  }
+}
