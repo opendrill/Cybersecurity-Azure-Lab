@@ -12,7 +12,7 @@ resource workspace 'Microsoft.OperationalInsights/workspaces@2026-03-01' = {
       name: 'PerGB2018'
     }
     workspaceCapping: {
-      dailyQuotaGb: 1
+      dailyQuotaGb: 2
     }
     features: {
       disableLocalAuth: false //enforces Microsoft Entra Id sign in when set to true, I don't have Entra Id configured.
