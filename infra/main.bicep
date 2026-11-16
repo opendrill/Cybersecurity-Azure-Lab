@@ -4,10 +4,9 @@ targetScope = 'subscription'
 param location string = 'ukwest' //defaults to uksouth if no argument provided. doing west for now since south vmSize is restricted for my subscription.
 
 @description('SSH public key file path for VM admin access')
-param sshPubKey string
+param sshPubKey string = '~/.ssh/azure_lab.pub'
 
-@description('username of the admin, ssh key must be in this /home/username/.ssh/ directory')
-param adminUserName string
+param adminUserName string = 'admin'
 
 param adminPassword string = 'UnsecurePassword123'
 
@@ -280,7 +279,7 @@ var vnetLabSubnets = [
   {
     name: 'private'
     properties: {
-      defaultOutboundAccess: false
+      defaultOutboundAccess: true
       addressPrefix: privatePrefix
       networkSecurityGroup: {
         id: nsgPrivate.outputs.nsgId

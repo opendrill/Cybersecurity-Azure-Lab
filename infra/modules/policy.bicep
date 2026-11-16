@@ -4,6 +4,7 @@ param location string
 param policyDefId string
 param policyDescription string
 
+//testing deploying a policy
 resource policy 'Microsoft.Authorization/policyAssignments@2026-07-01' = {
   name: policyName
   location: location
