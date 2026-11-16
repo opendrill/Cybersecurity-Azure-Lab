@@ -6,7 +6,9 @@ param adminUserName string
 param sshPubKey string
 param pubIp bool
 param installMonitoringAgent bool
+param passwordAuth bool
 param dcrId string
+param adminPassword string
 
 //Optional public IP address.
 resource publicIpAddress 'Microsoft.Network/publicIPAddresses@2026-01-01' = if (pubIp) {
@@ -53,8 +55,9 @@ resource vm 'Microsoft.Compute/virtualMachines@2026-04-01' = {
     osProfile: {
       computerName: vmName
       adminUsername: adminUserName
+      adminPassword: adminPassword
       linuxConfiguration: {
-        disablePasswordAuthentication: true
+        disablePasswordAuthentication: passwordAuth ? true : false
         ssh: {
           publicKeys: [
             {

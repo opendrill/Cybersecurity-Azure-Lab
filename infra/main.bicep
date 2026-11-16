@@ -9,6 +9,8 @@ param sshPubKey string
 @description('username of the admin, ssh key must be in this /home/username/.ssh/ directory')
 param adminUserName string
 
+param adminPassword string = 'UnsecurePassword123'
+
 //creating the resource group.
 resource rgLab 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   name: 'rg-lab'
@@ -368,6 +370,8 @@ module vmPrivate 'modules/vm.bicep' = {
     dcrId: syslogDcr.outputs.ruleId
     installMonitoringAgent: true
     pubIp: false
+    passwordAuth: false
+    adminPassword: adminPassword
   }
 }
 
@@ -384,6 +388,8 @@ module vmPublic 'modules/vm.bicep' = {
     dcrId: syslogDcr.outputs.ruleId
     installMonitoringAgent: true
     pubIp: false //change to true later
+    passwordAuth: true
+    adminPassword: adminPassword
   }
 }
 
