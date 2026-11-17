@@ -14,7 +14,7 @@ resource dcr 'Microsoft.Insights/dataCollectionRules@2024-03-11' = {
         {
           name: 'ssh-auth-syslog'
           facilityNames: ['*'] //e.g. ['auth', 'authpriv'] //the specific logs I want syslog messages from.
-          streams: ['Syslog']
+          streams: ['Microsoft-Syslog']
           logLevels: ['Emergency', 'Alert', 'Critical', 'Error', 'Warning', 'Notice', 'Info'] //7 severity levels of syslog. I want every syslog message to go to log analytics.
         }
       ]
@@ -29,7 +29,7 @@ resource dcr 'Microsoft.Insights/dataCollectionRules@2024-03-11' = {
     }
     dataFlows: [
       {
-        streams: ['Syslog']
+        streams: ['Microsoft-Syslog']
         destinations: ['${workspaceName}']
       }
     ]

@@ -14,3 +14,5 @@ Connecting the log analytics workspace to Defender works automatically in azure 
 I'm limited to 4vcpus on the free credit.
 
 I have to use ukwest instead of uksouth because uksouth is too popular.
+
+Need to give myself microsoft sentinel contributor in workspace roles in order to create the custom KQL alert through the Defender portal.

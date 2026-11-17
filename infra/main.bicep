@@ -6,9 +6,9 @@ param location string = 'ukwest' //defaults to uksouth if no argument provided. 
 @description('SSH public key file path for VM admin access')
 param sshPubKey string = '~/.ssh/azure_lab.pub'
 
-param adminUserName string = 'admin'
+param adminUserName string = 'suadmin'
 
-param adminPassword string = 'UnsecurePassword123'
+param adminPassword string
 
 //creating the resource group.
 resource rgLab 'Microsoft.Resources/resourceGroups@2025-04-01' = {
