@@ -32,3 +32,5 @@ resource syslogTable 'Microsoft.OperationalInsights/workspaces/tables@2026-03-01
 
 output workspaceName string = workspace.name
 output workspaceId string = workspace.id
+output syslogTableName string = syslogTable.name
+output syslogTableId string = syslogTable.id
