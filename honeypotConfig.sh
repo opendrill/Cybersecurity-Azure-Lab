@@ -1,4 +1,6 @@
 #!/bin/bash
+
+#COMPLETELY UNFINISHED
 #cloud-init runs as root.
 
 set -euo pipefail

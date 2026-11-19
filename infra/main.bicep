@@ -36,7 +36,7 @@ var publicRules = [
       direction: 'inbound'
       access: 'Deny'
       protocol: '*'
-      sourceAddressPrefixes: []
+      sourceAddressPrefixes: ['192.168.1.1']
       sourcePortRange: '*'
       destinationAddressPrefix: publicPrefix
       destinationPortRange: '*'
@@ -415,5 +415,16 @@ module allowedLocationsPolicy 'modules/policy.bicep' = {
     location: location
     policyDescription: ''
     policyDefId: '/providers/microsoft.authorization/policydefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c'
+  }
+}
+
+module playbook 'modules/playbook.bicep' = {
+  name: 'playbook-block-ip'
+  scope: rgMonitoring
+  params: {
+    location: location
+    playbookName: 'playbook-block-ip'
+    nsgName: 'nsg-honeynet'
+    nsgResourceGroup: 'rg-lab'
   }
 }
