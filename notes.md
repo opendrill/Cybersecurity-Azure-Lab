@@ -19,4 +19,6 @@ Need to give myself microsoft sentinel contributor in workspace roles in order t
 
 May need to deploy twice as the dcr will fail if it tries to deploy before it can recognise that the Syslog table has been created within log analytics. Maybe try creating syslog table module and adding dependsOn[syslogTable]
 
-The logic app (playbook) needs the Network Contributor role
+The logic app (playbook) needs the Network Contributor role.
+
+In nsgPublic IAM, assign the logic app network contributor.

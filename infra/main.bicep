@@ -424,7 +424,7 @@ module playbook 'modules/playbook.bicep' = {
   params: {
     location: location
     playbookName: 'playbook-block-ip'
-    nsgName: 'nsg-honeynet'
+    nsgName: 'nsg-public'
     nsgResourceGroup: 'rg-lab'
   }
 }
