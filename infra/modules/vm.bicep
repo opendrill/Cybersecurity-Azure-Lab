@@ -3,12 +3,13 @@ param location string
 param subnetId string
 param vmSize string
 param adminUserName string
-param sshPubKey string
 param pubIp bool
 param installMonitoringAgent bool
-param passwordAuth bool
 param dcrId string
-param adminPassword string
+@secure()
+param adminPassword string = ''
+param sshPubKey string = ''
+param passwordAuth bool = false
 
 //Optional public IP address.
 resource publicIpAddress 'Microsoft.Network/publicIPAddresses@2026-01-01' = if (pubIp) {
@@ -55,13 +56,13 @@ resource vm 'Microsoft.Compute/virtualMachines@2026-04-01' = {
     osProfile: {
       computerName: vmName
       adminUsername: adminUserName
-      adminPassword: adminPassword
+      adminPassword: passwordAuth ? adminPassword : null
       linuxConfiguration: {
-        disablePasswordAuthentication: passwordAuth ? true : false
-        ssh: {
+        disablePasswordAuthentication: !passwordAuth
+        ssh: passwordAuth ? null : {
           publicKeys: [
             {
-              path: '/home/${adminUserName}/.ssh/authorized_keys' //needs revision
+              path: '/home/${adminUserName}/.ssh/authorized_keys'
               keyData: sshPubKey
             }
           ]

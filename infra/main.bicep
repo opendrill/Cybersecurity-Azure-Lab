@@ -398,10 +398,9 @@ module vmPublic 'modules/vm.bicep' = {
     subnetId: vnetLab.outputs.subnetIds.public
     vmSize: vmSize
     adminUserName: adminUserName
-    sshPubKey: sshPubKey
     dcrId: syslogDcr.outputs.ruleId
     installMonitoringAgent: true
-    pubIp: false //change to true later
+    pubIp: true //change to true later
     passwordAuth: true
     adminPassword: adminPassword
   }
