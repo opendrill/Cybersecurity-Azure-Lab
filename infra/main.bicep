@@ -4,11 +4,11 @@ targetScope = 'subscription'
 param location string = 'ukwest' //defaults to uksouth if no argument provided. doing west for now since south vmSize is restricted for my subscription.
 
 @description('SSH public key file path for VM admin access')
-param sshPubKey string = '~/.ssh/azure_lab.pub'
+param sshPubKey string
 
-param adminUserName string = 'admin'
+param adminUserName string = 'suadmin'
 
-param adminPassword string = 'UnsecurePassword123'
+param adminPassword string
 
 //creating the resource group.
 resource rgLab 'Microsoft.Resources/resourceGroups@2025-04-01' = {
@@ -26,12 +26,26 @@ var bastionPrefix = '10.0.0.64/26'
 //size of the vms
 var vmSize string = 'Standard_D2alds_v7' //cheapest size I could see.
 
-//defining ACL rules for the NSF for the public subnet.
+//defining ACL rules for the NSG for the public subnet.
 var publicRules = [
+  //add rule for blocking ips
+  {
+    name: 'playbook-block-attackers'
+    properties: {
+      priority: 100
+      direction: 'inbound'
+      access: 'Deny'
+      protocol: '*'
+      sourceAddressPrefixes: ['192.168.1.1']
+      sourcePortRange: '*'
+      destinationAddressPrefix: publicPrefix
+      destinationPortRange: '*'
+    }
+  }
   {
     name: 'allow-in-ssh'
     properties: {
-      priority: 100
+      priority: 200
       direction: 'Inbound'
       access: 'Allow'
       protocol: 'Tcp'
@@ -44,7 +58,7 @@ var publicRules = [
   {
     name: 'allow-out-internet'
     properties: {
-      priority: 200
+      priority: 300
       direction: 'Outbound'
       access: 'Allow'
       protocol: '*'
@@ -57,7 +71,7 @@ var publicRules = [
   {
     name: 'deny-outbound-traffic-private'
     properties: {
-      priority: 300
+      priority: 400
       direction: 'Outbound'
       access: 'Deny'
       protocol: '*'
@@ -334,24 +348,25 @@ module logAnalytics 'modules/workspace.bicep' = {
   }
 }
 
-//creating dcr rule for getting all syslog messages into log analytics.
-module syslogDcr 'modules/dcr.bicep' = {
-  name: 'syslog-dcr'
-  scope: rgMonitoring
-  params: {
-    location: location
-    ruleName: 'syslog-dcr'
-    workspaceId: logAnalytics.outputs.workspaceId
-    workspaceName: logAnalytics.outputs.workspaceName
-  }
-}
-
 //deploying sentinel to the log analytics workspace.
 module sentinel 'modules/sentinel.bicep' = {
   name: 'sentinel'
   scope: rgMonitoring
   params: {
     workspaceName: logAnalytics.name
+  }
+}
+
+//creating dcr rule for getting all syslog messages into log analytics.
+module syslogDcr 'modules/dcr.bicep' = {
+  name: 'syslog-dcr'
+  scope: rgMonitoring
+  dependsOn: [logAnalytics]
+  params: {
+    location: location
+    ruleName: 'syslog-dcr'
+    workspaceId: logAnalytics.outputs.workspaceId
+    workspaceName: logAnalytics.outputs.workspaceName
   }
 }
 
@@ -383,10 +398,9 @@ module vmPublic 'modules/vm.bicep' = {
     subnetId: vnetLab.outputs.subnetIds.public
     vmSize: vmSize
     adminUserName: adminUserName
-    sshPubKey: sshPubKey
     dcrId: syslogDcr.outputs.ruleId
     installMonitoringAgent: true
-    pubIp: false //change to true later
+    pubIp: true //change to true later
     passwordAuth: true
     adminPassword: adminPassword
   }
@@ -400,5 +414,16 @@ module allowedLocationsPolicy 'modules/policy.bicep' = {
     location: location
     policyDescription: ''
     policyDefId: '/providers/microsoft.authorization/policydefinitions/e56962a6-4747-49cd-b67b-bf8b01975c4c'
+  }
+}
+
+module playbook 'modules/playbook.bicep' = {
+  name: 'playbook-block-ip'
+  scope: rgMonitoring
+  params: {
+    location: location
+    playbookName: 'playbook-block-ip'
+    nsgName: 'nsg-public'
+    nsgResourceGroup: 'rg-lab'
   }
 }

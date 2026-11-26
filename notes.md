@@ -5,7 +5,7 @@ sshPubKey="$(cat ~/.ssh/azure_lab.pub)"
 
 Full command example for deploying:
 az deployment sub create --location uksouth --template-file infra/
-main.bicep --parameters sshPubKey="$(cat ~/.ssh/azure_lab.pub)" adminUserName=
+main.bicep --parameters sshPubKey="$(cat ~/.ssh/azure_lab.pub)" adminPassword=
 
 Going to have to scale back this project and remove the web server honeypot, cowrie set up is a bit more complex then i thought it would be and i'm worried about time before my free credit expires.
 
@@ -14,3 +14,11 @@ Connecting the log analytics workspace to Defender works automatically in azure 
 I'm limited to 4vcpus on the free credit.
 
 I have to use ukwest instead of uksouth because uksouth is too popular.
+
+Need to give myself microsoft sentinel contributor in workspace roles in order to create the custom KQL alert through the Defender portal.
+
+May need to deploy twice as the dcr will fail if it tries to deploy before it can recognise that the Syslog table has been created within log analytics. Maybe try creating syslog table module and adding dependsOn[syslogTable]
+
+The logic app (playbook) needs the Network Contributor role.
+
+In nsgPublic IAM, assign the logic app network contributor.

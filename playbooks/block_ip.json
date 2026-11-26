@@ -1,0 +1,96 @@
+{
+  "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "$connections": { "type": "Object", "defaultValue": {} },
+    "subscriptionId": { "type": "String" },
+    "nsgResourceGroup": { "type": "String" },
+    "nsgName": { "type": "String" },
+    "blockRuleName": { "type": "String", "defaultValue": "playbook-block-attackers" },
+    "blockRulePriority": { "type": "Int", "defaultValue": 100 }
+  },
+  "triggers": {
+    "Microsoft_Sentinel_incident": {
+      "type": "ApiConnectionWebhook",
+      "inputs": {
+        "host": {
+          "connection": {
+            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+          }
+        },
+        "body": {
+          "callback_url": "@{listCallbackUrl()}"
+        },
+        "path": "/incident-creation"
+      },
+      "runtimeConfiguration": {
+        "concurrency": { "runs": 1 }
+      }
+    }
+  },
+  "actions": {
+    "Entities_-_Get_IPs": {
+      "type": "ApiConnection",
+      "inputs": {
+        "host": {
+          "connection": {
+            "name": "@parameters('$connections')['azuresentinel']['connectionId']"
+          }
+        },
+        "method": "post",
+        "body": "@triggerBody()?['object']?['properties']?['relatedEntities']",
+        "path": "/entities/ip"
+      },
+      "runAfter": {}
+    },
+    "get_NSG_rules": {
+      "type": "Http",
+      "inputs": {
+        "method": "GET",
+        "uri": "https://management.azure.com/subscriptions/@{parameters('subscriptionId')}/resourceGroups/@{parameters('nsgResourceGroup')}/providers/Microsoft.Network/networkSecurityGroups/@{parameters('nsgName')}/securityRules/@{parameters('blockRuleName')}?api-version=2026-01-01",
+        "authentication": {
+          "type": "ManagedServiceIdentity",
+          "audience": "https://management.azure.com"
+        }
+      },
+      "runAfter": {
+        "Entities_-_Get_IPs": ["Succeeded"]
+      }
+    },
+    "merge_IP_prefixes": {
+      "type": "Compose",
+      "inputs": "@union(coalesce(body('get_NSG_rules')?['properties']?['sourceAddressPrefixes'], createArray()), createArray(first(body('Entities_-_Get_IPs')?['IPs'])?['Address']))",
+      "runAfter": {
+        "get_NSG_rules": ["Succeeded"]
+      }
+    },
+    "update_NSG_rules": {
+      "type": "Http",
+      "inputs": {
+        "method": "PUT",
+        "uri": "https://management.azure.com/subscriptions/@{parameters('subscriptionId')}/resourceGroups/@{parameters('nsgResourceGroup')}/providers/Microsoft.Network/networkSecurityGroups/@{parameters('nsgName')}/securityRules/@{parameters('blockRuleName')}?api-version=2026-01-01",
+        "headers": { "content-type": "application/json" },
+        "body": {
+          "properties": {
+            "priority": "@parameters('blockRulePriority')",
+            "direction": "Inbound",
+            "access": "Deny",
+            "protocol": "*",
+            "sourcePortRange": "*",
+            "destinationPortRange": "*",
+            "destinationAddressPrefix": "*",
+            "sourceAddressPrefixes": "@outputs('merge_IP_prefixes')"
+          }
+        },
+        "authentication": {
+          "type": "ManagedServiceIdentity",
+          "audience": "https://management.azure.com"
+        }
+      },
+      "runAfter": {
+        "merge_IP_prefixes": ["Succeeded"]
+      }
+    }
+  },
+  "outputs": {}
+}
